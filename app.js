@@ -3,9 +3,7 @@ let minutes = document.querySelector('.minutes')
 let seconds = document.querySelector('.seconds')
 const start = document.querySelector('.start')
 const stop = document.querySelector('.stop')
-let sec = ''
-let min = ''
-let hrs = ''
+const reset = document.querySelector('.reset')
 let txtHrs = document.getElementById('hours')
 let txtMin = document.getElementById('minutes')
 let txtSec = document.getElementById('seconds')
@@ -13,50 +11,63 @@ let timeInterval
 let stpSec = ''
 let stpMin = ''
 let stpHr = ''
+
 function clockPiece(time) {
   time = Number(time) < 10 ? ' 0' + Number(time) : ' ' + time.toString()
   return time
 }
 
-function startClock(h, m, s) {
-  let htmlCheckNum = h.innerHTML + m.innerHTML + s.innerHTML
-  if (htmlCheckNum === '23 59 59') {
-    h.innerHTML = '00'
-    m.innerHTML = ' 00'
-    s.innerHTML = ' 00'
-  }
-  sec = s
-  min = m
-  hrs = h
-  s = Number(s.innerHTML)
-  s++
-  s = clockPiece(s)
-  sec.innerHTML = s
-  if (s > 59) {
-    sec.innerHTML = ' 00'
-    m = m.innerHTML
-    m++
-    m = clockPiece(m)
-    min.innerHTML = m
-  }
-  if (m > 59) {
-    min.innerHTML = ' 00'
-    h = h.innerHTML
-    h++
-    h = clockPiece(h)
-    hrs.innerHTML = h
-    stpHr=hrs.innerHTML
-  }
-  stpSec = sec.innerHTML
-  stpMin = min.innerHTML
-  stpHr=hrs.innerHTML
+function resetClock() {
+  hours.textContent = '00'
+  minutes.textContent = '00 '
+  seconds.textContent = '00'
 
+  stpHr = '00'
+  stpMin = '00'
+  stpSec = '00'
+}
+
+function startClock(hrs, min, sec) {
+  let htmlCheckNum = hrs.textContent + min.textContent + sec.textContent
+  if (htmlCheckNum === '23 59 59') {
+    resetClock()
+    return
+  }
+  let secHtml = sec
+  let minHtml = min
+  let hrsHtml = hrs
+
+  sec.innerHTML = secondLimit(secHtml)
+  clockLimit(sec, min, secHtml)
+  clockLimit(min, hrs, minHtml)
+  stpSec = secHtml.innerHTML
+  stpMin = minHtml.innerHTML
+  stpHr = hrsHtml.innerHTML
+}
+
+function secondLimit(secsHtml) {
+  let secs = Number(secsHtml.innerHTML)
+  if (secs > 59) {
+    return ' 00'
+  } else {
+    secs++
+    return clockPiece(secs)
+  }
+}
+
+function clockLimit(chkTime, strAnrTm, timeHtml) {
+  if (chkTime.innerHTML > 59) {
+    timeHtml.innerHTML = ' 00'
+    let strAnrTmValue = Number(strAnrTm.innerHTML)
+    strAnrTmValue++
+    strAnrTm.innerHTML = clockPiece(strAnrTmValue)
+  }
 }
 
 function stopClock() {
   clearInterval(timeInterval)
   onStopClock(txtHrs, txtMin, txtSec)
-  initInner(hours, minutes, seconds)
+  initInner(txtHrs, txtMin, txtSec)
 }
 
 const clock = (hours, minutes, seconds) => {
@@ -65,30 +76,32 @@ const clock = (hours, minutes, seconds) => {
   }, 1000)
 }
 
-const onStopClock = (hours,min,sec) =>{
-    if (hours.value === '') {
-        hours.value = '0'
-      }
-      if (hours.value === '') {
-        hours.value = '0'
-      }
-      if (hours.value === '') {
-        hours.value = '0'
-      }
-      hours.value = stpHr.toString().trim()
-      min.value = stpMin.toString().trim()
-      sec.value = stpSec.toString().trim()
+const onStopClock = (hours, min, sec) => {
+  emptyStrChecker(hours, min, sec)
+  hours.value = stpHr.toString().trim() === '00' ? '0' : stpHr.toString().trim()
+  min.value = stpMin.toString().trim() === '00' ? '0' : stpMin.toString().trim()
+  sec.value = stpSec.toString().trim() === '00' ? '0' : stpSec.toString().trim()
+}
+
+const isValidClock = (hr, mn, sc) => {
+  return (hr.value < 24 || hr.value === ''.trim()) &&
+    (mn.value < 60 || mn.value === ''.trim()) &&
+    (sc.value < 60 || sc.value === ''.trim())
+    ? true
+    : false
 }
 
 const initInner = (hr, mn, sc) => {
-  hr.innerHTML = txtHrs.value.length < 2 ? '0' + txtHrs.value : txtHrs.value
-  mn.innerHTML =
-    txtMin.value.length < 2 ? ' 0' + txtMin.value : ' ' + txtMin.value
-  sc.innerHTML =
-    txtSec.value.length < 2 ? ' 0' + txtSec.value : ' ' + txtSec.value
+  if (isValidClock(hr, mn, sc)) {
+    hours.innerHTML = clockPiece(hr.value).trim()
+    minutes.innerHTML = clockPiece(mn.value)
+    seconds.innerHTML = clockPiece(sc.value)
+  } else {
+    resetClock()
+  }
 }
 
-const txtChecker = (strHrs, strMin, strSec) => {
+const emptyStrChecker = (strHrs, strMin, strSec) => {
   if (strHrs.value === '') {
     strHrs.value = '0'
   }
@@ -98,19 +111,22 @@ const txtChecker = (strHrs, strMin, strSec) => {
   if (strSec.value === '') {
     strSec.value = '0'
   }
-  strHrs.value = strHrs.value
-  strMin.value = strMin.value
-  strSec.value = strSec.value
 }
 
 start.addEventListener('click', (event) => {
+  clearInterval(timeInterval)
   event.preventDefault()
-  txtChecker(txtHrs, txtMin, txtSec)
-  initInner(hours, minutes, seconds)
+  emptyStrChecker(txtHrs, txtMin, txtSec)
+  initInner(txtHrs, txtMin, txtSec)
   clock(hours, minutes, seconds)
 })
 
 stop.addEventListener('click', (event) => {
   event.preventDefault()
   stopClock()
+})
+
+reset.addEventListener('click', (event) => {
+  event.preventDefault()
+  resetClock()
 })
